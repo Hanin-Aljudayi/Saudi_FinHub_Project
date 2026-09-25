@@ -1,0 +1,25 @@
+{
+	"name": "DS_Economic_Rejected",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ADLS_SFH",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "economic_rejected.csv",
+				"folderPath": "economics",
+				"fileSystem": "rejcted"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

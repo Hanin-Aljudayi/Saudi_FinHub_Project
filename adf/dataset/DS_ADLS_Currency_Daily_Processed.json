@@ -1,0 +1,38 @@
+{
+	"name": "DS_ADLS_Currency_Daily_Processed",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ADLS_SFH",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "currency",
+				"fileSystem": "processed"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "rate_date",
+				"type": "DATE"
+			},
+			{
+				"name": "base_currency",
+				"type": "UTF8"
+			},
+			{
+				"name": "target_currency",
+				"type": "UTF8"
+			},
+			{
+				"name": "exchange_rate",
+				"type": "DOUBLE"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

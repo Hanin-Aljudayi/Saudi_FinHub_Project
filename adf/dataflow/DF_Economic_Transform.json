@@ -1,0 +1,262 @@
+{
+	"name": "DF_Economic_Transform",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_Economic_GDP_Raw",
+						"type": "DatasetReference"
+					},
+					"name": "GDP"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_Economic_Inflation_Raw",
+						"type": "DatasetReference"
+					},
+					"name": "Inflation"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_Economic_Unemployment_Raw",
+						"type": "DatasetReference"
+					},
+					"name": "Unemployment"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DS_Economic_Quarterly_Processed",
+						"type": "DatasetReference"
+					},
+					"name": "EconomicSink"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_Economic_Rejected",
+						"type": "DatasetReference"
+					},
+					"name": "RejectedSink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "GDPFiltered",
+					"description": "Keeps only Total Gross Domestic Product records."
+				},
+				{
+					"name": "GDPDerived",
+					"description": "Creates year, quarter, year_quarter, and numeric GDP value columns."
+				},
+				{
+					"name": "GDPYearFilter",
+					"description": "Keeps data from 2013 onward for YoY growth calculation."
+				},
+				{
+					"name": "GDPWindow",
+					"description": "Gets the GDP value from the same quarter of the previous year."
+				},
+				{
+					"name": "GDPGrowth",
+					"description": "Calculates the nominal GDP year-over-year (YoY) growth rate."
+				},
+				{
+					"name": "GDPFinal",
+					"description": "Keeps only the required GDP columns for the final economic dataset."
+				},
+				{
+					"name": "InflationFiltered"
+				},
+				{
+					"name": "InflationDerived"
+				},
+				{
+					"name": "InflationQuarterly"
+				},
+				{
+					"name": "InflationFinal"
+				},
+				{
+					"name": "UnemploymentFiltered"
+				},
+				{
+					"name": "UnemploymentDerived"
+				},
+				{
+					"name": "UnemploymentFinal"
+				},
+				{
+					"name": "GDPInflationJoin"
+				},
+				{
+					"name": "EconomicJoin"
+				},
+				{
+					"name": "EconomicYearFilter"
+				},
+				{
+					"name": "EconomicFinal"
+				},
+				{
+					"name": "EconomicRounded"
+				},
+				{
+					"name": "EconomicSorted"
+				},
+				{
+					"name": "EconomicValidation"
+				},
+				{
+					"name": "RejectedReason"
+				},
+				{
+					"name": "FinalSort"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          {Item Code} as string,",
+				"          {Main Activities} as string,",
+				"          {Year / Quarter} as string,",
+				"          {Gross Domestic Product} as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> GDP",
+				"source(output(",
+				"          {Item Code} as string,",
+				"          {Item Name} as string,",
+				"          YEAR_MONTH as string,",
+				"          CL_ADMIN_PRICES_E as string,",
+				"          D_BASKET_LVL as string,",
+				"          {Indicator Name} as string,",
+				"          OBS_VALUE as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Inflation",
+				"source(output(",
+				"          cl_nationality_gen_ord as string,",
+				"          cl_nationality_gen_en as string,",
+				"          cl_sex_gen_ord as string,",
+				"          cl_sex_gen_en as string,",
+				"          period as string,",
+				"          cl_quarter_gen_ord as string,",
+				"          cl_quarter_gen_en as string,",
+				"          cl_indicators_lf_en as string,",
+				"          cl_age_group_10_lf_en as string,",
+				"          obs_value as string,",
+				"          data_source as string,",
+				"          is_estimated as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Unemployment",
+				"GDP filter(byName('Main Activities') == 'Gross Domestic Product') ~> GDPFiltered",
+				"GDPFiltered derive(year = toInteger(split(byName('Year / Quarter'), '-')[1]),",
+				"          quarter = split(byName('Year / Quarter'), '-')[2],",
+				"          gdp_value = toDouble(replace(byName('Gross Domestic Product'), ',', '')),",
+				"          year_quarter = byName('Year / Quarter')) ~> GDPDerived",
+				"GDPDerived filter(year >= 2013) ~> GDPYearFilter",
+				"GDPYearFilter window(asc(year, true),",
+				"     asc(quarter, true),",
+				"     previous_year_gdp = lag(gdp_value, 4)) ~> GDPWindow",
+				"GDPWindow derive(gdp_growth_rate = ((gdp_value - previous_year_gdp) / previous_year_gdp) * 100) ~> GDPGrowth",
+				"GDPGrowth select(mapColumn(",
+				"          year,",
+				"          quarter,",
+				"          gdp_value,",
+				"          year_quarter,",
+				"          gdp_growth_rate",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> GDPFinal",
+				"Inflation filter(byName('Item Code') == '0') ~> InflationFiltered",
+				"InflationFiltered derive(date = toDate(byName('YEAR_MONTH'), 'M/d/yyyy'),",
+				"          year = year(toDate(byName('YEAR_MONTH'), 'M/d/yyyy')),",
+				"          quarter = case(     month(toDate(byName('YEAR_MONTH'), 'M/d/yyyy')) <= 3, 'Q1',     month(toDate(byName('YEAR_MONTH'), 'M/d/yyyy')) <= 6, 'Q2',     month(toDate(byName('YEAR_MONTH'), 'M/d/yyyy')) <= 9, 'Q3',     'Q4' ),",
+				"          year_quarter = toString(year(toDate(byName('YEAR_MONTH'), 'M/d/yyyy'))) + '-' + case(     month(toDate(byName('YEAR_MONTH'), 'M/d/yyyy')) <= 3, 'Q1',     month(toDate(byName('YEAR_MONTH'), 'M/d/yyyy')) <= 6, 'Q2',     month(toDate(byName('YEAR_MONTH'), 'M/d/yyyy')) <= 9, 'Q3',     'Q4' ),",
+				"          inflation_rate = toDouble(byName('OBS_VALUE'))) ~> InflationDerived",
+				"InflationDerived aggregate(groupBy(year,",
+				"          quarter,",
+				"          year_quarter),",
+				"     inflation_rate = avg(inflation_rate)) ~> InflationQuarterly",
+				"InflationQuarterly select(mapColumn(",
+				"          year,",
+				"          quarter,",
+				"          year_quarter,",
+				"          inflation_rate",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> InflationFinal",
+				"Unemployment filter(byName('cl_nationality_gen_en') == 'Total' &&",
+				"byName('cl_sex_gen_en') == 'Total') ~> UnemploymentFiltered",
+				"UnemploymentFiltered derive(year = toInteger(byName('period')),",
+				"          quarter = 'Q' + toString(toInteger(byName('cl_quarter_gen_ord'))),",
+				"          year_quarter = toString(toInteger(byName('period'))) + '-Q' + toString(toInteger(byName('cl_quarter_gen_ord'))),",
+				"          unemployment_rate = toDouble(byName('obs_value'))) ~> UnemploymentDerived",
+				"UnemploymentDerived select(mapColumn(",
+				"          year,",
+				"          quarter,",
+				"          year_quarter,",
+				"          unemployment_rate",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> UnemploymentFinal",
+				"GDPFinal, InflationFinal join(GDPFinal@year_quarter == InflationFinal@year_quarter,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> GDPInflationJoin",
+				"GDPInflationJoin, UnemploymentFinal join(GDPFinal@year_quarter == UnemploymentFinal@year_quarter,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> EconomicJoin",
+				"EconomicJoin filter(toInteger(left(toString(byName('year_quarter')), 4)) >= 2014) ~> EconomicYearFilter",
+				"EconomicRounded select(mapColumn(",
+				"          year = GDPFinal@year,",
+				"          quarter = GDPFinal@quarter,",
+				"          year_quarter = GDPFinal@year_quarter,",
+				"          gdp_value,",
+				"          gdp_growth_rate,",
+				"          inflation_rate,",
+				"          unemployment_rate",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> EconomicFinal",
+				"EconomicYearFilter derive(gdp_growth_rate = round(gdp_growth_rate, 2),",
+				"          inflation_rate = round(inflation_rate, 2),",
+				"          unemployment_rate = round(unemployment_rate, 2)) ~> EconomicRounded",
+				"EconomicFinal sort(asc(year, true),",
+				"     asc(quarter, true)) ~> EconomicSorted",
+				"EconomicSorted split(!isNull(year) && !isNull(quarter) && !isNull(year_quarter) && !isNull(gdp_value) && !isNull(gdp_growth_rate) && !isNull(inflation_rate) && !isNull(unemployment_rate),",
+				"     disjoint: false) ~> EconomicValidation@(Valid, Rejected)",
+				"EconomicValidation@Rejected derive(rejection_reason = case(     isNull(year), 'Missing year',     isNull(quarter), 'Missing quarter',     isNull(year_quarter), 'Missing year_quarter',     isNull(gdp_value), 'Missing GDP value',     isNull(gdp_growth_rate), 'Missing GDP growth rate',     isNull(inflation_rate), 'Missing inflation rate',     isNull(unemployment_rate), 'Missing unemployment rate',     'Invalid row' )) ~> RejectedReason",
+				"EconomicValidation@Valid sort(asc(year, true),",
+				"     asc(quarter, true)) ~> FinalSort",
+				"FinalSort sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['economic_quarterly.csv'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> EconomicSink",
+				"RejectedReason sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['economic_rejected.csv'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> RejectedSink"
+			]
+		}
+	}
+}

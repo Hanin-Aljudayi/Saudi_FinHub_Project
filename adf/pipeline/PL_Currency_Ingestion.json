@@ -1,0 +1,99 @@
+{
+	"name": "PL_Currency_Ingestion",
+	"properties": {
+		"activities": [
+			{
+				"name": "CA_Currency_Raw_Ingest",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "GET"
+					},
+					"sink": {
+						"type": "JsonSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "PreserveHierarchy"
+						},
+						"formatSettings": {
+							"type": "JsonWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_Frankfurter_TimeSeries",
+						"type": "DatasetReference",
+						"parameters": {
+							"StartDate": "@pipeline().parameters.StartDate",
+							"EndDate": "@pipeline().parameters.EndDate"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_ADLS_Currency_Raw",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "CurrencyTransform",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [
+					{
+						"activity": "CA_Currency_Raw_Ingest",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "DF_Currency_Transform",
+						"type": "DataFlowReference"
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"parameters": {
+			"StartDate": {
+				"type": "string",
+				"defaultValue": "2013-01-03"
+			},
+			"EndDate": {
+				"type": "string",
+				"defaultValue": "2026-09-17"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-09-21T13:24:48Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

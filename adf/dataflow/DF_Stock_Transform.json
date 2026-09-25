@@ -1,0 +1,81 @@
+{
+	"name": "DF_Stock_Transform",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_TASI_RAW",
+						"type": "DatasetReference"
+					},
+					"name": "TASIRAW"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DS_TASI_PROCESSED",
+						"type": "DatasetReference"
+					},
+					"name": "STOCKPROCESSED",
+					"description": "Writes cleaned and standardized TASI stock data to the processed ADLS layer."
+				}
+			],
+			"transformations": [
+				{
+					"name": "STOCKCLEANED"
+				},
+				{
+					"name": "STOCKRENAMED",
+					"description": "Renames TASI stock columns to standardized English names."
+				},
+				{
+					"name": "FltIncremental"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          {تاريخ} as string,",
+				"          {اخر سعر} as string,",
+				"          {سعر الفتح} as string,",
+				"          {عالي} as string,",
+				"          {منخفض} as string,",
+				"          {الحجم} as string,",
+				"          {التغير %} as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> TASIRAW",
+				"TASIRAW derive({تاريخ} = toDate(     replace(         replace(trim(byName('تاريخ')), '\\u200f', ''),         '\\u200e',         ''     ),     'dd/MM/yyyy' ),",
+				"          {اخر سعر} = toDecimal(replace(trim(byName('اخر سعر')), ',', ''), 18, 2),",
+				"          {سعر الفتح} = toDecimal(replace(trim(byName('سعر الفتح')), ',', ''), 18, 2),",
+				"          {عالي} = toDecimal(replace(trim(byName('عالي')), ',', ''), 18, 2),",
+				"          {منخفض} = toDecimal(replace(trim(byName('منخفض')), ',', ''), 18, 2),",
+				"          {الحجم} = iif(     endsWith(trim(byName('الحجم')), 'B'),     toDecimal(replace(trim(byName('الحجم')), 'B', ''), 18, 2) * 1000000000,     iif(         endsWith(trim(byName('الحجم')), 'M'),         toDecimal(replace(trim(byName('الحجم')), 'M', ''), 18, 2) * 1000000,         iif(             endsWith(trim(byName('الحجم')), 'K'),             toDecimal(replace(trim(byName('الحجم')), 'K', ''), 18, 2) * 1000,             toDecimal(trim(byName('الحجم')), 18, 2)         )     ) ),",
+				"          {التغير %} = toDouble(     replace(         trim(toString(byPosition(7))),         '%',         ''     ) )) ~> STOCKCLEANED",
+				"STOCKCLEANED select(mapColumn(",
+				"          Date = {تاريخ},",
+				"          Close = {اخر سعر},",
+				"          Open = {سعر الفتح},",
+				"          High = {عالي},",
+				"          Low = {منخفض},",
+				"          Volume = {الحجم},",
+				"          {Change%} = {التغير %}",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> STOCKRENAMED",
+				"STOCKRENAMED filter(true()) ~> FltIncremental",
+				"FltIncremental sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['tasi_cleaned.csv'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> STOCKPROCESSED"
+			]
+		}
+	}
+}

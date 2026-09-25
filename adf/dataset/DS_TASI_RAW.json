@@ -1,0 +1,54 @@
+{
+	"name": "DS_TASI_RAW",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ADLS_SFH",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "tasi_raw.csv",
+				"folderPath": "Stocks",
+				"fileSystem": "raw"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "تاريخ",
+				"type": "String"
+			},
+			{
+				"name": "اخر سعر",
+				"type": "String"
+			},
+			{
+				"name": "سعر الفتح",
+				"type": "String"
+			},
+			{
+				"name": "عالي",
+				"type": "String"
+			},
+			{
+				"name": "منخفض",
+				"type": "String"
+			},
+			{
+				"name": "الحجم",
+				"type": "String"
+			},
+			{
+				"name": "التغير %",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

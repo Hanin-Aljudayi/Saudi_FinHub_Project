@@ -1,0 +1,116 @@
+{
+	"name": "DF_Currency_Transform",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_ADLS_Currency_Raw_Source",
+						"type": "DatasetReference"
+					},
+					"name": "SrcCurrencyRaw"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "LS_ADLS_SFH",
+						"type": "LinkedServiceReference"
+					},
+					"name": "SnkCurrencyProcessed",
+					"rejectedDataLinkedService": {
+						"referenceName": "LS_ADLS_SFH",
+						"type": "LinkedServiceReference"
+					}
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_ADLS_Currency_Rejected",
+						"type": "DatasetReference"
+					},
+					"name": "SnkCurrencyRejected",
+					"rejectedDataLinkedService": {
+						"referenceName": "LS_ADLS_SFH",
+						"type": "LinkedServiceReference"
+					}
+				}
+			],
+			"transformations": [
+				{
+					"name": "DrvCurrencyClean"
+				},
+				{
+					"name": "SelCurrencyFinal"
+				},
+				{
+					"name": "SplitValidRejected"
+				},
+				{
+					"name": "alterRow1"
+				},
+				{
+					"name": "filter1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          base as string,",
+				"          date as date,",
+				"          quote as string,",
+				"          rate as double",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     inferDriftedColumnTypes: true,",
+				"     ignoreNoFilesFound: false,",
+				"     documentForm: 'documentPerLine') ~> SrcCurrencyRaw",
+				"SrcCurrencyRaw derive(rate_date = toDate(toString(date), 'yyyy-MM-dd'),",
+				"          base_currency = upper(trim(base)),",
+				"          target_currency = upper(trim(quote)),",
+				"          exchange_rate = toDouble(rate)) ~> DrvCurrencyClean",
+				"DrvCurrencyClean select(mapColumn(",
+				"          rate_date,",
+				"          base_currency,",
+				"          target_currency,",
+				"          exchange_rate",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelCurrencyFinal",
+				"filter1 split(!isNull(rate_date) && !isNull(base_currency) && !isNull(target_currency) && !isNull(exchange_rate) && exchange_rate > 0,",
+				"     disjoint: false) ~> SplitValidRejected@(Valid, Rejected)",
+				"SplitValidRejected@Valid alterRow(upsertIf(true())) ~> alterRow1",
+				"SelCurrencyFinal filter(rate_date >= toDate('2014-01-01')) ~> filter1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'delta',",
+				"     compressionType: 'snappy',",
+				"     compressionLevel: 'Optimal',",
+				"     fileSystem: 'processed',",
+				"     folderPath: 'currency',",
+				"     mergeSchema: false,",
+				"     autoCompact: false,",
+				"     optimizedWrite: false,",
+				"     vacuum: 0,",
+				"     deletable: false,",
+				"     insertable: false,",
+				"     updateable: false,",
+				"     upsertable: true,",
+				"     keys:['rate_date','base_currency','target_currency'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SnkCurrencyProcessed",
+				"SplitValidRejected@Rejected sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SnkCurrencyRejected"
+			]
+		}
+	}
+}

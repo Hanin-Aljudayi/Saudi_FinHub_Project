@@ -1,0 +1,15 @@
+{
+	"name": "SaudiFinhub",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "uaenorth",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "d4142959-1c2c-4aba-934a-570dc95c62f2",
+		"tenantId": "f02fd825-8f4f-43c6-864c-53bfce06a717"
+	}
+}

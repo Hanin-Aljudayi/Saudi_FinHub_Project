@@ -1,0 +1,74 @@
+{
+	"name": "DS_Economic_Unemployment_Raw",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ADLS_SFH",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "Unemployment_rate_by_nationality_and_sex_2013_2026.csv",
+				"folderPath": "Economics",
+				"fileSystem": "raw"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "cl_nationality_gen_ord",
+				"type": "String"
+			},
+			{
+				"name": "cl_nationality_gen_en",
+				"type": "String"
+			},
+			{
+				"name": "cl_sex_gen_ord",
+				"type": "String"
+			},
+			{
+				"name": "cl_sex_gen_en",
+				"type": "String"
+			},
+			{
+				"name": "period",
+				"type": "String"
+			},
+			{
+				"name": "cl_quarter_gen_ord",
+				"type": "String"
+			},
+			{
+				"name": "cl_quarter_gen_en",
+				"type": "String"
+			},
+			{
+				"name": "cl_indicators_lf_en",
+				"type": "String"
+			},
+			{
+				"name": "cl_age_group_10_lf_en",
+				"type": "String"
+			},
+			{
+				"name": "obs_value",
+				"type": "String"
+			},
+			{
+				"name": "data_source",
+				"type": "String"
+			},
+			{
+				"name": "is_estimated",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

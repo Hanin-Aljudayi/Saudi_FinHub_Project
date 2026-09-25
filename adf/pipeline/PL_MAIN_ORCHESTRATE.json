@@ -1,0 +1,74 @@
+{
+	"name": "PL_MAIN_ORCHESTRATE",
+	"properties": {
+		"activities": [
+			{
+				"name": "EP_Currency",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_Currency_Ingestion",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"StartDate": {
+							"value": "@formatDateTime(addDays(utcNow(), -3), 'yyyy-MM-dd')",
+							"type": "Expression"
+						},
+						"EndDate": {
+							"value": "@formatDateTime(if(or(equals(dayOfWeek(utcNow()), 0), equals(dayOfWeek(utcNow()), 6)), addDays(utcNow(), if(equals(dayOfWeek(utcNow()), 0), -2, -1)), utcNow()), 'yyyy-MM-dd')",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "EP_Stock",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_Stock",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "EP_Economic",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_Economic",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"parameters": {
+			"RunDate": {
+				"type": "string",
+				"defaultValue": "@formatDateTime(utcNow(), 'yyyy-MM-dd')"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-09-22T10:45:57Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

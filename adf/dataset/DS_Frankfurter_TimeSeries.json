@@ -1,0 +1,29 @@
+{
+	"name": "DS_Frankfurter_TimeSeries",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_Frankfurter_API",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"StartDate": {
+				"type": "string",
+				"defaultValue": "2013-01-03"
+			},
+			"EndDate": {
+				"type": "string",
+				"defaultValue": "2026-09-17"
+			}
+		},
+		"annotations": [],
+		"type": "RestResource",
+		"typeProperties": {
+			"relativeUrl": {
+				"value": "@{concat('rates?from=', dataset().StartDate, '&to=', dataset().EndDate, '&base=SAR')}",
+				"type": "Expression"
+			}
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
