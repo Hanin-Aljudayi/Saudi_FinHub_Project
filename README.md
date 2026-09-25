@@ -1,21 +1,16 @@
 # Saudi_FinHub_Project
-
 ## Project Overview
-
-Saudi FinHub is a data engineering project designed to centralize Saudi market and economic data into a unified data platform.
+Saudi FinHub is a data engineering project designed to centralize Saudi market and economic data into a unified dashboard to give a clear overview of the saudi market
 
 The project integrates:
-
 - Saudi stock market data
 - Saudi economic indicators
 - Currency exchange rate data
 
 The data pipeline follows a layered architecture:
-
-**Source → Azure Data Factory → ADLS Raw → Transformation → ADLS Processed → Synapse → Power BI**
+Source → Azure Data Factory → ADLS Raw → Transformation → ADLS Processed → Synapse → Power BI
 
 The project focuses on preserving daily market data while preparing reliable, validated datasets for downstream analytics and visualization.
-
 ---
 
 ## Data Sources
@@ -48,22 +43,3 @@ The currency dataset contains historical exchange rate information for SAR again
 
 The currency data is integrated using `Date` as the common integration key.
 
----
-
-# Data Architecture
-
-The project follows a layered data architecture:
-
-Source
-      ↓
-Azure Data Factory
-      ↓
-ADLS RAW Layer
-      ↓
-Data Transformation & Validation
-      ↓
-ADLS PROCESSED Layer
-      ↓
-Azure Synapse
-      ↓
-Power BI
