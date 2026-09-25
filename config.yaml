@@ -1,0 +1,141 @@
+# =========================================================
+# Saudi FinHub — Project Configuration
+# Values used by the pipeline. See README.md for architecture.
+# =========================================================
+
+project:
+  name: Saudi FinHub
+  environment: production
+  timezone: UTC
+
+# ---------- Data Sources ----------
+sources:
+  currency:
+    url: https://api.frankfurter.dev/v2
+    endpoint: /rates
+    base_currency: SAR
+    start_date: "2013-01-03"
+    auth: none
+    format: ndjson
+
+  stock:
+    local_path: raw/Stocks/tasi_raw.csv
+    start_date: "2014-01-01"
+    auth: none
+    format: csv
+
+  economic:
+    url: https://database.stats.gov.sa/home/landing
+    auth: none
+    format: csv
+    frequency: quarterly
+
+# ---------- Storage ----------
+storage:
+  account: sfh
+  raw_container: raw
+  processed_container: processed
+  rejected_container: rejcted      # Note: intentional spelling
+
+  paths:
+    currency_raw: raw/currency/currency_raw.json
+    currency_processed: processed/currency/          # Delta
+    currency_rejected: rejcted/currency/
+
+    stock_raw: raw/Stocks/tasi_raw.csv
+    stock_processed: processed/stocks/tasi_cleaned.csv
+    stock_rejected: rejcted/stocks/
+
+    economic_raw: raw/Economics/
+    economic_processed: processed/economics/economic_quarterly.csv
+    economic_rejected: rejcted/economics/
+
+# ---------- ADF ----------
+adf:
+  factory: SaudiFinhub
+  main_pipeline: PL_MAIN_ORCHESTRATE
+  trigger: TR_Main_Daily
+  schedule: daily
+
+  currency_pipeline: PL_Currency_Ingestion
+  stock_pipeline: PL_Stock
+  economic_pipeline: PL_Economic
+
+  currency_data_flow: DF_Currency_Transform
+  stock_data_flow: DF_Stock_Transform
+  economic_data_flow: DF_Economic_Transform
+
+# ---------- Synapse ----------
+synapse:
+  workspace: sfh-synapse
+  endpoint: sfh-synapse-ondemand.sql.azuresynapse.net
+  database: SaudiFinHubServerless
+  auth: entra_id
+  schema: dw
+
+# ---------- Schemas ----------
+schemas:
+  currency:
+    grain: [rate_date, base_currency, target_currency]
+    columns:
+      rate_date: date
+      base_currency: string
+      target_currency: string
+      exchange_rate: double
+
+  stock:
+    grain: [date]
+    columns:
+      date: date
+      close: decimal
+      open: decimal
+      high: decimal
+      low: decimal
+      volume: bigint
+      change_pct: decimal
+
+  economic:
+    grain: [year, quarter]
+    columns:
+      year: integer
+      quarter: string
+      year_quarter: string
+      gdp_value: decimal
+      gdp_growth_rate: decimal
+      inflation_rate: decimal
+      unemployment_rate: decimal
+
+# ---------- Validation ----------
+validation:
+  currency:
+    - "!isNull(rate_date)"
+    - "!isNull(base_currency)"
+    - "!isNull(target_currency)"
+    - "!isNull(exchange_rate) and exchange_rate > 0"
+
+  stock:
+    - "!isNull(date)"
+    - "open > 0 and high > 0 and low > 0 and close > 0"
+    - "volume >= 0"
+
+  economic:
+    - "!isNull(year_quarter)"
+    - "!isNull(gdp_value)"
+    - "!isNull(inflation_rate)"
+    - "!isNull(unemployment_rate)"
+
+# ---------- Local Python Reference (optional) ----------
+python:
+  enabled: false
+  entrypoint: main.py
+  paths:
+    raw: data/raw/
+    interim: data/interim/
+    processed: data/processed/
+  logging:
+    level: INFO
+
+# ---------- Local Development ----------
+local:
+  repo: https://github.com/Hanin-Aljudayi/Saudi_FinHub_Project
+  clone_dir: ./Saudi_FinHub_Project
