@@ -1,0 +1,24 @@
+{
+	"name": "trigger",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_MAIN_ORCHESTRATE",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Hour",
+				"interval": 24,
+				"startTime": "2026-09-27T18:00:00",
+				"timeZone": "Arab Standard Time"
+			}
+		}
+	}
+}
